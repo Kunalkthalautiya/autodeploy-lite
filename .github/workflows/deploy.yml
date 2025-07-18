@@ -30,11 +30,3 @@ jobs:
 
     - name: Push SHA tag
       run: docker push $IMAGE_NAME:${{ github.sha }}
-
-    - name: Slack Notification
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        fields: repo,message,commit,author,job,ref
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
