@@ -1,4 +1,4 @@
-name: CI/CD Pipeline to EC2
+name: CI/CD Pipeline to DockerHub
 
 on:
   push:
@@ -6,33 +6,30 @@ on:
 
 env:
   IMAGE_NAME: kunalkumarthalautiya/autodeploy-lite
-  TAG: ${{ github.sha }}
+  TAG: latest
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Build Docker image
       run: docker build -t $IMAGE_NAME:$TAG .
 
+    - name: Tag with Git SHA
+      run: docker tag $IMAGE_NAME:$TAG $IMAGE_NAME:${{ github.sha }}
+
     - name: Login to DockerHub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Push to DockerHub
+    - name: Push latest tag
       run: docker push $IMAGE_NAME:$TAG
 
-    - name: SSH into EC2 & Deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          bash ~/autodeploy-lite/deploy/ec2-deploy.sh $IMAGE_NAME $TAG
+    - name: Push SHA tag
+      run: docker push $IMAGE_NAME:${{ github.sha }}
 
     - name: Slack Notification
       uses: 8398a7/action-slack@v3
